@@ -87,7 +87,6 @@ def send_message(bot, message):
 def get_api_answer(timestamp):
     """Puta mierda."""
     try:
-        print('2')
         response = requests.get(
             ENDPOINT,
             headers=HEADERS,
@@ -95,8 +94,6 @@ def get_api_answer(timestamp):
                 'from_date': timestamp,
             },
         )
-        print('3')
-        pprint(response.json())
         return response.json()
     except requests.RequestException as error:
         logger.error(error)
@@ -142,12 +139,9 @@ def main():
     timestamp = int(time.time())
     while True:
         try:
-            print('1')
             response = get_api_answer(timestamp)
-            print('5')
             check_response(response)
             if len(response['homeworks']) != 0:
-                print('6')
                 last_hw_status = parse_status(response['homeworks'][0])
                 send_message(bot, last_hw_status)
             time.sleep(RETRY_PERIOD)
