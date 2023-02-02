@@ -139,8 +139,7 @@ def main():
     """Puta mierda."""
     check_tokens()
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    # timestamp = int(time.time())
-    timestamp = 0
+    timestamp = int(time.time())
     while True:
         try:
             print('1')
