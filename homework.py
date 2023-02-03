@@ -134,7 +134,7 @@ def check_response(response) -> None:
 
 
 def parse_status(homework) -> str:
-    """
+    """.
     Извлекает из информации о конкретной домашней работе статус этой
     работы.
     """
