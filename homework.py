@@ -124,9 +124,9 @@ def check_response(response) -> None:
         logger.error('Keys does not match or missing.')
         raise KeyError
     valid_types = (
-        isinstance(response, dict) and
-        isinstance(response['homeworks'], list) and
-        isinstance(response['current_date'], int)
+        isinstance(response, dict)
+        and isinstance(response['homeworks'], list)
+        and isinstance(response['current_date'], int)
     )
     if not valid_types:
         logger.error('Wrong object type.')
@@ -134,8 +134,10 @@ def check_response(response) -> None:
 
 
 def parse_status(homework) -> str:
-    """Извлекает из информации о конкретной домашней работе статус этой
-    работы."""
+    """
+    Извлекает из информации о конкретной домашней работе статус этой
+    работы.
+    """
     try:
         homework_name = homework['homework_name']
         status = homework['status']
