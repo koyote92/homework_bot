@@ -79,12 +79,9 @@ def check_tokens() -> None:
         TELEGRAM_TOKEN,
         TELEGRAM_CHAT_ID,
     )
-    empty_env_var_list = []
-    for variable in environmental_variables:
-        if variable is None:
-            empty_env_var_list.append(variable)
-    if len(empty_env_var_list) != 0:
-        logger.critical(f'Token(s) is not filled: {empty_env_var_list}')
+    check_empty_tokens = [x for x in environmental_variables if x is None]
+    if len(check_empty_tokens) != 0:
+        logger.critical(f'Token(s) is not filled.')
         raise EnvironmentalVariableException
 
 
