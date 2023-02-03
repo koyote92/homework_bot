@@ -71,8 +71,6 @@ HOMEWORK_VERDICTS = {
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
 
-MESSAGE_CACHE = ''  # Такое кэширование сообщения пойдёт?
-
 
 def check_tokens() -> None:
     """Проверяет доступность переменных окружения."""
@@ -92,9 +90,6 @@ def check_tokens() -> None:
 
 def send_message(bot, message) -> None:
     """Отправляет сообщение пользователю."""
-    global MESSAGE_CACHE
-    if message != MESSAGE_CACHE:
-        MESSAGE_CACHE = message
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
         logger.debug('Message has been sent.')
