@@ -81,7 +81,7 @@ def check_tokens() -> None:
     )
     check_empty_tokens = [x for x in environmental_variables if x is None]
     if len(check_empty_tokens) != 0:
-        logger.critical(f'Token(s) is not filled.')
+        logger.critical('Token(s) is not filled.')
         raise EnvironmentalVariableException
 
 
