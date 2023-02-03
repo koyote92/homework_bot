@@ -1,46 +1,56 @@
+#!homework_bot/homework.py
 import logging
-import requests
 import os
+import requests
 import telegram
 import time
 from dotenv import load_dotenv
-from logging import StreamHandler
-from sys import stdout
 from http import HTTPStatus
+from sys import stdout
 
+from exceptions import APIException, EnvironmentalVariableException
 
-# Привет.
-# Как всегда. "Обожаю" Яндекс. "Вот вам примеры в начале теории. Но в финальном
-# задании спринта мы сделаем вам свою структуру кода, а пример с такой
-# структурой не покажем. Вы новички, а новички должны страдать. Те, кто
-# переживёт - молодец. Те, кто не переживёт - тупой, пошли вон с курса."
-# Я наверное очень токсичный студент, но НОВИЧКОВ так не учат, ИМХО.
+# ^ Так ведь? ^
 
-# Вообще, может моё мнение неверное, но пихать в автотесты "подсказки" типа
-# "Убедитесь, что при корректном ответе API функция `check_response`
-# не вызывает исключений." это издевательство. У меня она блин не вызывает
-# исключений, почему нельзя просто сказать, чего от меня хотят???
+# !!! Дальше философствование, если не хочется читать - не обижусь) !!!
+# --------------------------------
+# По поводу моей токсичности (оправдываюсь =D): я в жизни вообще незлобный
+# человек.
+# Просто я учил детей, которые даже речи не имеют из-за своих особенностей, и
+# их родителей (несколько лет работал с детьми с ОВЗ, психолог по образованию).
+# А видя то, как делают тут, могу сказать - так не учат, позиционируя курс как
+# якобы для новичков.
 
-# И да, я извиняюсь за свои докстринги, но менять их принципиально не хочу.
-# В своё оправдание скажу, что я сейчас занимаюсь автоматизацией на селениуме
-# и ОБЯЗАТЕЛЬНО пишу докстринги. Меня просто до глубины души раздражает
-# подача материала, поэтому я психую. На эту угадайку "что имел в виду автор
-# теста" ночью уходит по три часа. Я в это время могу спать, блин. Но нет, не
-# угадал, как обойти assert - сиди, тыкайся.
+# Если это попытка приучить пользоваться интернетом - то тогда в теоретической
+# части нет смысла, так как она неконкурентоспособна, источников в сети куда
+# больше и они куда качественнее (хотя бы из-за наличия примеров). С таким же
+# успехом можно просто давать в задании спринта темы для самостоятельного
+# изучения и проект с ревью, без теории.
 
-# Из-за этого вроде бы интересная тема ботов превращается в бодание с ассертами
-# и единственное, что ты запоминаешь - это мысли "да какого чёрта тебе надо,
-# автор тестов, подавись уже".
+# Если цель у курса всё же научить своими силами - надо плавно повышать
+# сложность и объяснять на пальцах, а проектные задания давать с
+# альтернативными, но не отличными от обучающих примеров условиями. Взрослые
+# обучаются куда хуже детей.
 
-# Другое дело, когда ты присылаешь ревью и говоришь - вот тут не так, лучше
-# поменять на вот это, потому что вот так.
+# А в итоге имеем теорию, в которой объясняют только основы необходимых для
+# проекта тем, потом доходим до самого проекта и сложность резко возрастает,
+# так как надо: 1) придерживаться заданной структуры кода, примеров которой в
+# теории нигде не приводят 2) из-за отсутствия примеров ты начинаешь бороться с
+# автотестами, не понимая, какое именно исправление от тебя хотят. И которые
+# почти ничему не учат, если пояснения составлены расплывчато.
+
+# Это я ещё не говорю про особенности обучения взрослого человека,
+# предполагающие неизбежную ригидность психики, уровень актуального развития +
+# зоны ближайшего развития (относительно нового навыка), да банальный уровень
+# занятости и подобные более бытовые штуки.
+# --------------------------------
 
 
 load_dotenv()
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-handler = StreamHandler(stdout)
+handler = logging.StreamHandler(stdout)
 logger.addHandler(handler)
 formatter = logging.Formatter(
     '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -61,31 +71,39 @@ HOMEWORK_VERDICTS = {
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
 
+MESSAGE_CACHE = ''  # Такое кэширование сообщения пойдёт?
 
-def check_tokens():
-    """Puta mierda."""
+
+def check_tokens() -> None:
+    """Проверяет доступность переменных окружения."""
     environmental_variables = (
         PRACTICUM_TOKEN,
         TELEGRAM_TOKEN,
-        TELEGRAM_CHAT_ID
+        TELEGRAM_CHAT_ID,
     )
+    empty_env_var_list = []
     for variable in environmental_variables:
         if variable is None:
-            logger.critical(f'Token {variable} is not filled.')
-            raise Exception
+            empty_env_var_list.append(variable)
+    if len(empty_env_var_list) != 0:
+        logger.critical(f'Token(s) is not filled: {empty_env_var_list}')
+        raise EnvironmentalVariableException
 
 
-def send_message(bot, message):
-    """Puta mierda."""
+def send_message(bot, message) -> None:
+    """Отправляет сообщение пользователю."""
+    global MESSAGE_CACHE
+    if message != MESSAGE_CACHE:
+        MESSAGE_CACHE = message
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
-        logger.debug('Всё ок.')
-    except Exception as error:
+        logger.debug('Message has been sent.')
+    except telegram.error.TelegramError as error:
         logger.error(error)
 
 
-def get_api_answer(timestamp):
-    """Puta mierda."""
+def get_api_answer(timestamp) -> dict:
+    """Делает запрос к API."""
     try:
         response = requests.get(
             ENDPOINT,
@@ -94,46 +112,47 @@ def get_api_answer(timestamp):
                 'from_date': timestamp,
             },
         )
-        return response.json()
     except requests.RequestException as error:
         logger.error(error)
         raise requests.RequestException
     finally:
-        if response.status_code != HTTPStatus.OK:
+        if response.status_code == HTTPStatus.OK:
+            return response.json()
+        else:
             logger.error(f'Response status code is: {response.status_code}')
-            raise Exception
+            raise APIException
 
 
-def check_response(response):
-    """Puta mierda."""
-    if not isinstance(response, dict):
+def check_response(response) -> None:
+    """Проверяет ответ API на соответствие документации."""
+    if not {'homeworks', 'current_date'}.issubset(response):
+        logger.error('Keys does not match or missing.')
+        raise KeyError
+    valid_types = (
+        isinstance(response, dict) and
+        isinstance(response['homeworks'], list) and
+        isinstance(response['current_date'], int)
+    )
+    if not valid_types:
         logger.error('Wrong object type.')
         raise TypeError
-    if ('homeworks' or 'current_date') not in response:
-        logger.error('Blah-blah-blah.')
-        raise KeyError
-    if not isinstance(response['homeworks'], list):
-        logger.error('Wrong object type.')
-        raise TypeError
-    if not response['current_date']:
-        logger.error('Blah-blah-blah.')
-        raise KeyError
 
 
-def parse_status(homework):
-    """Puta mierda."""
+def parse_status(homework) -> str:
+    """Извлекает из информации о конкретной домашней работе статус этой
+    работы."""
     try:
         homework_name = homework['homework_name']
         status = homework['status']
         verdict = HOMEWORK_VERDICTS[status]
         return f'Изменился статус проверки работы "{homework_name}". {verdict}'
-    except 'homework_name' or 'status' not in homework.keys():
-        logger.error('Тьфу')
+    except KeyError as error:
+        logger.error(error, exc_info=True)
         raise KeyError
 
 
-def main():
-    """Puta mierda."""
+def main() -> None:
+    """Основная логика работы программы."""
     check_tokens()
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     timestamp = int(time.time())
@@ -145,6 +164,9 @@ def main():
                 last_hw_status = parse_status(response['homeworks'][0])
                 send_message(bot, last_hw_status)
             time.sleep(RETRY_PERIOD)
+        # Понятия не имею, какой эксепшен тут перехватывать. Как говорится в
+        # статье, в таких случаях можно использовать хотя бы класс, хоть и
+        # нежелательно.
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             send_message(bot, message)
