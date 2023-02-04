@@ -74,13 +74,18 @@ HOMEWORK_VERDICTS = {
 
 def check_tokens() -> None:
     """Проверяет доступность переменных окружения."""
+    # Попробовал разными способами и не пришло ничего в голову. Только если
+    # пихать каждую переменную в свой if, а мне так не нравится. Куда смотреть?
+    # Как сделать без сторонних библиотек? Пробовал словарём и двумя кортежами
+    # (во втором лежали захардкоженные названия переменных и пробовал доставать
+    # через цикл for в генераторе по индексу из первого кортежа). Если попадает
+    # две переменные с None, всё смещается.
     environmental_variables = (
         PRACTICUM_TOKEN,
         TELEGRAM_TOKEN,
         TELEGRAM_CHAT_ID,
     )
-    check_empty_tokens = [x for x in environmental_variables if x is None]
-    if len(check_empty_tokens) != 0:
+    if not all(environmental_variables):
         logger.critical('Token(s) is not filled.')
         raise EnvironmentalVariableException
 
