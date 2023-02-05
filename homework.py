@@ -123,7 +123,7 @@ def main() -> None:
                 last_hw_status = parse_status(response['homeworks'][0])
                 if last_hw_status != message_cache:
                     message_cache = last_hw_status
-                send_message(bot, message_cache)
+                    send_message(bot, message_cache)
             time.sleep(RETRY_PERIOD)
         except (KeyError,
                 TypeError,
