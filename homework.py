@@ -2,6 +2,7 @@ import logging
 import os
 import time
 from sys import stdout
+from typing import Type
 from http import HTTPStatus
 
 import telegram
@@ -51,7 +52,7 @@ def check_tokens() -> None:
         raise EnvironmentalVariableException
 
 
-def send_message(bot: type[telegram.Bot], message: str) -> None:
+def send_message(bot: Type[telegram.Bot], message: str) -> None:
     """Отправляет сообщение пользователю."""
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
