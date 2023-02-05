@@ -1,35 +1,28 @@
-#!homework_bot/homework.py
 import logging
 import os
-import requests
-import telegram
 import time
-from dotenv import load_dotenv
-from http import HTTPStatus
 from sys import stdout
+from http import HTTPStatus
+
+import telegram
+import requests
+from dotenv import load_dotenv
 
 from exceptions import APIException, EnvironmentalVariableException
 
-# ^ Так ведь? ^
-
-# !!! Дальше философствование, если не хочется читать - не обижусь) !!!
-# --------------------------------
-# Тут был длинный текст-оправдание, в котором я говорил, что в жизни не
-# токсичный, что так как в Яше новичков бессмысленно учить, аргументированно,
-# но ну его нафиг.
-# --------------------------------
-
+# Вроде так? А девятую строку в импортах не надо перекинуть выше
+# import telegram, чтобы соблюдался алфавит? И пятую выше всех?
 
 load_dotenv()
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 handler = logging.StreamHandler(stdout)
-logger.addHandler(handler)
 formatter = logging.Formatter(
     '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
@@ -48,12 +41,6 @@ HOMEWORK_VERDICTS = {
 
 def check_tokens() -> None:
     """Проверяет доступность переменных окружения."""
-    # Попробовал разными способами и не пришло ничего в голову. Только если
-    # пихать каждую переменную в свой if, а мне так не нравится. Куда смотреть?
-    # Как сделать без сторонних библиотек? Пробовал словарём и двумя кортежами
-    # (во втором лежали захардкоженные названия переменных и пробовал доставать
-    # через цикл for в генераторе по индексу из первого кортежа). Если попадает
-    # две переменные с None, всё смещается.
     environmental_variables = (
         PRACTICUM_TOKEN,
         TELEGRAM_TOKEN,
@@ -64,7 +51,7 @@ def check_tokens() -> None:
         raise EnvironmentalVariableException
 
 
-def send_message(bot, message) -> None:
+def send_message(bot: type[telegram.Bot], message: str) -> None:
     """Отправляет сообщение пользователю."""
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
@@ -73,7 +60,7 @@ def send_message(bot, message) -> None:
         logger.error(error)
 
 
-def get_api_answer(timestamp) -> dict:
+def get_api_answer(timestamp: int) -> dict:
     """Делает запрос к API."""
     try:
         response = requests.get(
@@ -85,16 +72,14 @@ def get_api_answer(timestamp) -> dict:
         )
     except requests.RequestException as error:
         logger.error(error)
-        raise requests.RequestException
-    finally:
-        if response.status_code == HTTPStatus.OK:
-            return response.json()
-        else:
-            logger.error(f'Response status code is: {response.status_code}')
-            raise APIException
+        raise APIException
+    if response.status_code != HTTPStatus.OK:
+        logger.error(APIException)
+        raise APIException
+    return response.json()
 
 
-def check_response(response) -> None:
+def check_response(response: dict) -> None:
     """Проверяет ответ API на соответствие документации."""
     if not {'homeworks', 'current_date'}.issubset(response):
         logger.error('Keys does not match or missing.')
@@ -109,7 +94,7 @@ def check_response(response) -> None:
         raise TypeError
 
 
-def parse_status(homework) -> str:
+def parse_status(homework: dict) -> str:
     """.
     Извлекает из информации о конкретной домашней работе статус этой
     работы.
@@ -126,6 +111,7 @@ def parse_status(homework) -> str:
 
 def main() -> None:
     """Основная логика работы программы."""
+    message_cache = ''
     check_tokens()
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     timestamp = int(time.time())
@@ -135,12 +121,16 @@ def main() -> None:
             check_response(response)
             if len(response['homeworks']) != 0:
                 last_hw_status = parse_status(response['homeworks'][0])
-                send_message(bot, last_hw_status)
+                if last_hw_status != message_cache:
+                    message_cache = last_hw_status
+                send_message(bot, message_cache)
             time.sleep(RETRY_PERIOD)
-        # Понятия не имею, какой эксепшен тут перехватывать. Как говорится в
-        # статье, в таких случаях можно использовать хотя бы класс, хоть и
-        # нежелательно.
-        except Exception as error:
+        except (KeyError,
+                TypeError,
+                EnvironmentalVariableException,
+                telegram.error.TelegramError,
+                requests.RequestException,
+                APIException) as error:
             message = f'Сбой в работе программы: {error}'
             send_message(bot, message)
             logger.error(message)
