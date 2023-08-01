@@ -11,8 +11,6 @@ from dotenv import load_dotenv
 
 from exceptions import APIException, EnvironmentalVariableException
 
-# Вроде так? А девятую строку в импортах не надо перекинуть выше
-# import telegram, чтобы соблюдался алфавит? И пятую выше всех?
 
 load_dotenv()
 
